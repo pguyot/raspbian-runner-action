@@ -1,0 +1,34 @@
+name: Test overlayfs
+on:
+  push:
+    branches:
+      - 'main'
+      - 'releases/**'
+      - 'test-overlayfs'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test_overlayfs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: ./ # pguyot/arm-runner-action@HEAD
+      id: enable_overlayfs
+      with:
+        # we don't want to optimize as it's two-stage
+        optimize_image: no
+        commands: |
+          sudo raspi-config nonint do_overlayfs 0
+    
+    - name: Compress image and generate release JSON
+      run: |
+        mv "${{ steps.enable_overlayfs.outputs.image }}" "${{ runner.temp }}/overlayfs.img"
+        pigz -kf "${{ runner.temp }}/overlayfs.img"
+    
+    - uses: actions/upload-artifact@v4
+      with:
+        name: overlayfs.img.gz
+        path: ${{ runner.temp }}/overlayfs.img.gz
+        retention-days: 5
