@@ -21,6 +21,9 @@ inputs:
     description: 'Path to cpu info file to be mounted on /proc/cpuinfo'
     required: false
     default: ''
+  non_image_commands:
+    description: 'Commands to run outside the image, executed with /bin/sh'
+    required: false
   commands:
     description: 'Commands to run in the image, executed with /bin/sh'
     required: true
@@ -219,6 +222,9 @@ runs:
             sudo cp -Rp ${{ github.workspace }} ${{ steps.mount_image.outputs.mount }}${repository_path}
         ;;
         esac
+        if [ "${{ inputs.non_image_commands }}x" != "x" ]; then
+            ${{ inputs.non_image_commands }}
+        fi
         if [ "${{ inputs.use_systemd_nspawn }}x" != "x" -a "${{ inputs.use_systemd_nspawn }}x" != "nox" ]; then
             chroot_script_dir=/scripts
             script_dir=${RUNNER_TEMP:-/home/actions/temp}/scripts
