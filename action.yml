@@ -223,11 +223,11 @@ runs:
         ;;
         esac
         if [ "${{ inputs.non_image_commands }}x" != "x" ]; then
-            mkdir -p ${script_dir}
             script_path=${script_dir}/non_image_commands.sh
+            mkdir -p ${script_dir}
             cat >> ${script_path} <<"INPUT_COMMANDS_EOF"
-            ${{ inputs.non_image_commands }}
-            INPUT_COMMANDS_EOF
+        ${{ inputs.non_image_commands }}
+        INPUT_COMMANDS_EOF
             /bin/sh $script_path
         fi
         if [ "${{ inputs.use_systemd_nspawn }}x" != "x" -a "${{ inputs.use_systemd_nspawn }}x" != "nox" ]; then
