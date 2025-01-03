@@ -36,15 +36,6 @@ loopdev=$(losetup --find --show --partscan ${image})
 echo "Created loopback device ${loopdev}"
 echo "loopdev=${loopdev}" >> "$GITHUB_OUTPUT"
 
-if [ ${additional_mb} -gt 0 ]; then
-    if ( (parted --script $loopdev print || false) | grep "Partition Table: gpt" > /dev/null); then
-        sgdisk -e "${loopdev}"
-    fi
-    parted --script "${loopdev}" resizepart ${rootpartition} 100%
-    e2fsck -p -f "${loopdev}p${rootpartition}"
-    resize2fs "${loopdev}p${rootpartition}"
-    echo "Finished resizing disk image."
-fi
 
 waitForFile() {
     maxRetries=60
@@ -88,6 +79,16 @@ fi
 
 rootdev=$(waitForFile "${loopdev}p${rootpartition}")
 
+
+if [ ${additional_mb} -gt 0 ]; then
+    if ( (parted --script $loopdev print || false) | grep "Partition Table: gpt" > /dev/null); then
+        sgdisk -e "${loopdev}"
+    fi
+    parted --script "${loopdev}" resizepart ${rootpartition} 100%
+    e2fsck -p -f "${loopdev}p${rootpartition}"
+    resize2fs "${loopdev}p${rootpartition}"
+    echo "Finished resizing disk image."
+fi
 
 # Mount the image
 mount=${RUNNER_TEMP:-/home/actions/temp}/arm-runner/mnt
