@@ -76,15 +76,9 @@ if [ "x$manual_partitions" = "xyes" -o "x$manual_partitions" = "xtrue" ]; then
     done
 
         
-    if [ "x$bootpartition" != "x" ]; then
-        bootdev="${loopdev}p${bootpartition}"
-    else
-        bootdev=
-    fi
 
-    rootdev="${loopdev}p${rootpartition}"
+fi
 
-else
 
 if [ "x$bootpartition" != "x" ]; then
     bootdev=$(waitForFile "${loopdev}p${bootpartition}")
@@ -93,8 +87,6 @@ else
 fi
 
 rootdev=$(waitForFile "${loopdev}p${rootpartition}")
-
-fi
 
 
 # Mount the image
