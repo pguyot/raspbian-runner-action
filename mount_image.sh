@@ -19,6 +19,15 @@ else
     bootpartition=
 fi
 
+if [ $# -ge 6 ]; then
+
+    manual_partitions=$6
+else
+    manual_partitions=
+fi
+
+echo "inside mount_image manual_partitions=${manual_partitions}"
+
 if [ ${additional_mb} -gt 0 ]; then
     dd if=/dev/zero bs=1M count=${additional_mb} >> ${image}
 fi
@@ -53,12 +62,40 @@ waitForFile() {
 
 sync
 partprobe -s "${loopdev}"
+
+# manual partitions making
+if [ "x$manual_partitions" = "xyes" -o "x$manual_partitions" = "xtrue" ]; then
+    echo "Creating manual partitions"
+    partitions=$(lsblk --raw --output "MAJ:MIN" --noheadings ${loopdev} | tail -n +2)
+    counter=1
+    for i in $partitions; do
+        MAJ=$(echo $i | cut -d: -f1)
+        MIN=$(echo $i | cut -d: -f2)
+        if [ ! -e "${loopdev}p${counter}" ]; then mknod ${loopdev}p${counter} b $MAJ $MIN; fi
+        counter=$((counter + 1))
+    done
+
+        
+    if [ "x$bootpartition" != "x" ]; then
+        bootdev="${loopdev}p${bootpartition}"
+    else
+        bootdev=
+    fi
+
+    rootdev="${loopdev}p${rootpartition}"
+
+else
+
 if [ "x$bootpartition" != "x" ]; then
     bootdev=$(waitForFile "${loopdev}p${bootpartition}")
 else
     bootdev=
 fi
+
 rootdev=$(waitForFile "${loopdev}p${rootpartition}")
+
+fi
+
 
 # Mount the image
 mount=${RUNNER_TEMP:-/home/actions/temp}/arm-runner/mnt
