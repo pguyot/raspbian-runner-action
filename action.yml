@@ -161,12 +161,18 @@ runs:
         CACHE_IMAGE_PATH="$CACHE_DIR/$BASE_IMAGE_FILENAME"
         if [ -f "$CACHE_IMAGE_PATH" ]; then
           echo "Base image found in cache: $CACHE_IMAGE_PATH"
+          echo "image=$CACHE_IMAGE_PATH" >> "$GITHUB_OUTPUT"
         else
           echo "Downloading base image: ${{ inputs.base_image }}"
-          DOWNLOADED_IMAGE=$(bash ${GITHUB_ACTION_PATH}/download_image.sh "${{ inputs.base_image }}")
+          bash ${GITHUB_ACTION_PATH}/download_image.sh "${{ inputs.base_image }}"
+          # Read the last line starting with "image=" from GITHUB_OUTPUT to get the downloaded image path.
+          DOWNLOADED_IMAGE=$(grep '^image=' "$GITHUB_OUTPUT" | tail -n1 | cut -d'=' -f2)
+          if [ -z "$DOWNLOADED_IMAGE" ]; then
+            echo "Error: download_image.sh did not output a valid image path."
+            exit 1
+          fi
           cp "$DOWNLOADED_IMAGE" "$CACHE_IMAGE_PATH"
         fi
-        echo "::set-output name=image::$CACHE_IMAGE_PATH"
       shell: bash
     - name: Mount and optionally resize image
       run: |
