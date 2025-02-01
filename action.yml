@@ -222,7 +222,7 @@ runs:
             sudo cp -Rp ${{ github.workspace }} ${{ steps.mount_image.outputs.mount }}${repository_path}
         ;;
         esac
-        if [ "${{ inputs.non_image_commands }}x" != "x" ]; then
+        if [ -n "${{ inputs.non_image_commands }}" ]; then
             script_path=${script_dir}/non_image_commands.sh
             mkdir -p ${script_dir}
             cat >> ${script_path} <<"INPUT_COMMANDS_EOF"
