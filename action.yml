@@ -21,6 +21,12 @@ inputs:
     description: 'Path to cpu info file to be mounted on /proc/cpuinfo'
     required: false
     default: ''
+  extra_files_path:
+    description: 'Extra files to copy to the image'
+    required: false
+  extra_files_mnt_path:
+    description: 'Where to copy extra files to in the image'
+    required: false
   non_image_commands:
     description: 'Commands to run outside the image, executed with /bin/sh'
     required: false
@@ -222,11 +228,12 @@ runs:
             sudo cp -Rp ${{ github.workspace }} ${{ steps.mount_image.outputs.mount }}${repository_path}
         ;;
         esac
-        if [ -n "${{ inputs.non_image_commands }}" ]; then
-            script_path=${script_dir}/non_image_commands.sh
-            mkdir -p ${script_dir}
-            cat >> ${script_path} <<"INPUT_COMMANDS_EOF"
-        ${{ inputs.non_image_commands }}
+        sudo cp -Rp ${{ inputs.extra_files_path }} ${{ steps.mount_image.outputs.mount }}${inputs.extra_files_mnt_path}
+        # if [ -n "${{ inputs.non_image_commands }}" ]; then
+        #     script_path=${script_dir}/non_image_commands.sh
+        #     mkdir -p ${script_dir}
+        #     cat >> ${script_path} <<"INPUT_COMMANDS_EOF"
+        # ${{ inputs.non_image_commands }}
         INPUT_COMMANDS_EOF
             /bin/sh $script_path
         fi
