@@ -144,12 +144,30 @@ runs:
         sudo update-binfmts --package arm-runner-action --install arm-runner-action-qemu-arm1 /usr/bin/qemu-arm-static0 --magic '\x7f\x45\x4c\x46\x01\x01\x01\x00\x41\x49\x02\x00\x00\x00\x00\x00\x02\x00\x28\x00' --mask '\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff' --credentials yes --fix-binary yes
         sudo update-binfmts --package arm-runner-action --install arm-runner-action-qemu-aarch64 /usr/bin/qemu-aarch64-static0 --magic '\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00' --mask '\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff' --credentials yes --fix-binary yes
         sudo update-binfmts --package arm-runner-action --install arm-runner-action-qemu-aarch641 /usr/bin/qemu-aarch64-static0 --magic '\x7f\x45\x4c\x46\x02\x01\x01\x00\x41\x49\x02\x00\x00\x00\x00\x00\x02\x00\xb7\x00' --mask '\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff' --credentials yes --fix-binary yes
-
+    - name: Restore base image cache
+      id: cache_base_image
+      uses: actions/cache@v3
+      with:
+        path: cached_base_images
+        key: base-image-${{ inputs.base_image }}
     - name: Download base image
-      run: |
-        bash ${GITHUB_ACTION_PATH}/download_image.sh ${{ inputs.base_image }}
-      shell: bash
       id: download_image
+      run: |
+        set -e
+        CACHE_DIR="cached_base_images"
+        mkdir -p "$CACHE_DIR"
+        # Sanitize the base image name to create a valid filename.
+        BASE_IMAGE_FILENAME=$(echo "${{ inputs.base_image }}" | sed 's/[^a-zA-Z0-9_.-]/_/g').img
+        CACHE_IMAGE_PATH="$CACHE_DIR/$BASE_IMAGE_FILENAME"
+        if [ -f "$CACHE_IMAGE_PATH" ]; then
+          echo "Base image found in cache: $CACHE_IMAGE_PATH"
+        else
+          echo "Downloading base image: ${{ inputs.base_image }}"
+          DOWNLOADED_IMAGE=$(bash ${GITHUB_ACTION_PATH}/download_image.sh "${{ inputs.base_image }}")
+          cp "$DOWNLOADED_IMAGE" "$CACHE_IMAGE_PATH"
+        fi
+        echo "::set-output name=image::$CACHE_IMAGE_PATH"
+      shell: bash
     - name: Mount and optionally resize image
       run: |
         sudo --preserve-env=GITHUB_OUTPUT bash ${GITHUB_ACTION_PATH}/mount_image.sh ${{ steps.download_image.outputs.image }} ${{ inputs.image_additional_mb }} ${{ inputs.use_systemd_nspawn }} ${{ inputs.rootpartition }} ${{ inputs.bootpartition }}
