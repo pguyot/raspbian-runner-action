@@ -259,6 +259,10 @@ runs:
           if [ -z "$extra_files_mnt_path" ]; then
             extra_files_mnt_path="/"
           fi
+          
+          # Ensure path starts with a slash and doesn't have double slashes
+          extra_files_mnt_path=$(echo "/${extra_files_mnt_path}" | sed 's#^//*#/#')
+          
           echo "Copying extra files from ${{ inputs.extra_files_path }} to ${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}"
           sudo mkdir -p "${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}"
           sudo cp -Rp ${{ inputs.extra_files_path }}/* "${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}/"
