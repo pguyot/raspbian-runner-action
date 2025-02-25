@@ -253,7 +253,18 @@ runs:
         ;;
         esac
         if [ -n "${{ inputs.extra_files_path }}" ]; then
-          sudo cp -Rp ${{ inputs.extra_files_path }} ${{ steps.mount_image.outputs.mount }}${inputs.extra_files_mnt_path}
+          # Create target directory if needed
+          extra_files_mnt_path="${{ inputs.extra_files_mnt_path }}"
+          # Default to copying to root if not specified
+          if [ -z "$extra_files_mnt_path" ]; then
+            extra_files_mnt_path="/"
+          fi
+          echo "Copying extra files from ${{ inputs.extra_files_path }} to ${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}"
+          sudo mkdir -p "${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}"
+          sudo cp -Rp ${{ inputs.extra_files_path }}/* "${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}/"
+          # List contents to verify copy
+          echo "Contents of ${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}:"
+          sudo ls -la "${{ steps.mount_image.outputs.mount }}${extra_files_mnt_path}"
         fi
         if [ "${{ inputs.use_systemd_nspawn }}x" != "x" -a "${{ inputs.use_systemd_nspawn }}x" != "nox" ]; then
             chroot_script_dir=/scripts
